@@ -19,9 +19,16 @@ def carregar_dados_sheets() -> pd.DataFrame:
     Returns:
         DataFrame com os dados da planilha.
     """
-    gc = gspread.service_account(filename='credentials.json')
-    planilha = gc.open_by_url(SPREADSHEET_URL)
-    aba = planilha.worksheet(WORKSHEET_NAME)
+    if "gcp_service_account" in st.secrets:
+        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+    else:
+        gc = gspread.service_account(filename="credentials.json")
+
+    spreadsheet_url = st.secrets.get("sheets", {}).get("url", SPREADSHEET_URL)
+    worksheet_name = st.secrets.get("sheets", {}).get("worksheet", WORKSHEET_NAME)
+
+    planilha = gc.open_by_url(spreadsheet_url)
+    aba = planilha.worksheet(worksheet_name)
     dados = aba.get_all_records()
     return pd.DataFrame(dados)
 
