@@ -10,6 +10,18 @@ from utils.data_loader import carregar_dados_sheets, preparar_dados
 
 st.set_page_config(layout="wide", page_title="Resumo Geral", page_icon="◼")
 
+# Estilo para testar atualização: sidebar laranja
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        background-color: #f28c28;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # === FUNÇÕES ===
 
 def criar_pivot_por_operacao(df: pd.DataFrame):
