@@ -316,7 +316,7 @@ ordem_colunas = [
     "Departed",
     "Seal",
     "fechada",
-    "cancelado",
+    "Cancelled",
     "% cancelado",
     "%Cancel Nok",
     "% fechada",
