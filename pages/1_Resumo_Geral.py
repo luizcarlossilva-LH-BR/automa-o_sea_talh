@@ -179,9 +179,30 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
         df_pivot["% CPT"] = df_pivot["% CPT"].fillna(0.0)
     else:
         df_pivot["% CPT"] = 0.0
+
+    if "eta_origin_realized" in df.columns and "status_eta" in df.columns:
+        df_eta = df[df["eta_origin_realized"].notna()].copy()
+        df_eta_agrupado = df_eta.groupby(["operacao_origem", "origin_station_code"]).agg(
+            eta_delay=("status_eta", lambda s: (s == "DELAY").sum()),
+            total_trip=("trip_number", "count")
+        ).reset_index()
+
+        df_eta_agrupado["% ETA"] = (
+            df_eta_agrupado["eta_delay"]
+            / df_eta_agrupado["total_trip"].replace(0, pd.NA)
+        ).fillna(0.0).round(2)
+
+        df_pivot = df_pivot.merge(
+            df_eta_agrupado[["operacao_origem", "origin_station_code", "% ETA"]],
+            on=["operacao_origem", "origin_station_code"],
+            how="left"
+        )
+        df_pivot["% ETA"] = df_pivot["% ETA"].fillna(0.0)
+    else:
+        df_pivot["% ETA"] = 0.0
     
     df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", "origin_station_code": "Estação"})
-    colunas_pct = [f"% {s}" for s in colunas_status] + ["Cancel Nok", "% CPT"]
+    colunas_pct = [f"% {s}" for s in colunas_status] + ["Cancel Nok", "% CPT", "% ETA"]
     
     return df_pivot.sort_values(["Operação", "Estação"]), colunas_pct
 
@@ -240,6 +261,7 @@ ordem_colunas = [
     "cancelado", "% cancelado",
     "Cancel Nok",
     "% CPT",
+    "% ETA",
     "no show", "% no show",
     "Arrived", "% Arrived",
     "Carrega", "% Carrega",
