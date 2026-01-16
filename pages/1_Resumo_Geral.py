@@ -417,9 +417,12 @@ def exibir_detalhamento_por_regional(
 def exibir_detalhamento_por_operacao(
     df_tabela: pd.DataFrame,
     operacao: str,
-    height_multiplier: float = 1.0
+    height_multiplier: float = 1.0,
+    ordenar_total_desc: bool = False
 ):
     df_filtrado = df_tabela[df_tabela["Operação"] == operacao].drop(columns=["Operação"])
+    if ordenar_total_desc and "Total" in df_filtrado.columns:
+        df_filtrado = df_filtrado.sort_values("Total", ascending=False)
     altura_base = max(1, len(df_filtrado) + 1) * 35
     altura = int(altura_base * height_multiplier)
     st.subheader(f"Detalhamento por Estação - {operacao}")
@@ -434,4 +437,4 @@ def exibir_detalhamento_por_operacao(
 
 exibir_detalhamento_por_regional(df_regional, "SOC", height_multiplier=1)
 exibir_detalhamento_por_operacao(df_detalhado, "SOC", height_multiplier=1)
-exibir_detalhamento_por_operacao(df_detalhado, "FMH")
+exibir_detalhamento_por_operacao(df_detalhado, "FMH", ordenar_total_desc=True)
