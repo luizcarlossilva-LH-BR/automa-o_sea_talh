@@ -6,12 +6,13 @@ sys.path.append('..')
 
 import pandas as pd
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 from utils.data_loader import carregar_dados_sheets, preparar_dados
 
 st.set_page_config(layout="wide", page_title="Resumo Geral", page_icon="◼")
 
 # Atualiza automaticamente a cada 1 hora
-st.autorefresh(interval=60 * 60 * 1000, key="auto_refresh_resumo")
+st_autorefresh(interval=60 * 60 * 1000, key="auto_refresh_resumo")
 
 # Estilo para testar atualização: sidebar laranja
 st.markdown(
