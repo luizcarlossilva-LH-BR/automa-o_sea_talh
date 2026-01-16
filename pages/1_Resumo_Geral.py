@@ -145,22 +145,43 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
             contagem_cancelamentos=(col_contagem, "sum")
         ).reset_index()
 
-        df_cancelamento["% Cancelamento OK"] = (
+        df_cancelamento["Cancel Nok"] = (
             df_cancelamento["soma_aderencia_cancelamento"]
             / df_cancelamento["contagem_cancelamentos"].replace(0, pd.NA)
         ).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_cancelamento[["operacao_origem", "origin_station_code", "% Cancelamento OK"]],
+            df_cancelamento[["operacao_origem", "origin_station_code", "Cancel Nok"]],
             on=["operacao_origem", "origin_station_code"],
             how="left"
         )
-        df_pivot["% Cancelamento OK"] = df_pivot["% Cancelamento OK"].fillna(0.0)
+        df_pivot["Cancel Nok"] = df_pivot["Cancel Nok"].fillna(0.0)
     else:
-        df_pivot["% Cancelamento OK"] = 0.0
+        df_pivot["Cancel Nok"] = 0.0
+
+    if "eta_origin_realized" in df.columns and "status_cpt" in df.columns:
+        df_cpt = df[df["eta_origin_realized"].notna()].copy()
+        df_cpt_agrupado = df_cpt.groupby(["operacao_origem", "origin_station_code"]).agg(
+            cpt_delay=("status_cpt", lambda s: (s == "DELAY").sum()),
+            total_trip=("trip_number", "count")
+        ).reset_index()
+
+        df_cpt_agrupado["% CPT"] = (
+            df_cpt_agrupado["cpt_delay"]
+            / df_cpt_agrupado["total_trip"].replace(0, pd.NA)
+        ).fillna(0.0).round(2)
+
+        df_pivot = df_pivot.merge(
+            df_cpt_agrupado[["operacao_origem", "origin_station_code", "% CPT"]],
+            on=["operacao_origem", "origin_station_code"],
+            how="left"
+        )
+        df_pivot["% CPT"] = df_pivot["% CPT"].fillna(0.0)
+    else:
+        df_pivot["% CPT"] = 0.0
     
     df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", "origin_station_code": "Estação"})
-    colunas_pct = [f"% {s}" for s in colunas_status] + ["% Cancelamento OK"]
+    colunas_pct = [f"% {s}" for s in colunas_status] + ["Cancel Nok", "% CPT"]
     
     return df_pivot.sort_values(["Operação", "Estação"]), colunas_pct
 
@@ -217,7 +238,8 @@ ordem_colunas = [
     "Assigning", "% Assigning",
     "Assigned", "% Assigned",
     "cancelado", "% cancelado",
-    "% Cancelamento OK",
+    "Cancel Nok",
+    "% CPT",
     "no show", "% no show",
     "Arrived", "% Arrived",
     "Carrega", "% Carrega",
