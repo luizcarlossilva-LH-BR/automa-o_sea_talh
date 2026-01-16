@@ -301,6 +301,8 @@ colunas_excluir = [
     "% Seal",
     "% fechada",
     "% Unseal",
+    "",
+    "%",
 ]
 
 ordem_colunas = [
@@ -349,26 +351,14 @@ ordem_colunas_regional = [
     "% CPT",
 ]
 
-colunas_ordenadas = (
-    ["Operação"]
-    + [col for col in ordem_colunas if col in df_detalhado.columns]
-    + [
-        col
-        for col in df_detalhado.columns
-        if col not in ordem_colunas + ["Operação"] + colunas_excluir
-    ]
-)
+colunas_ordenadas = ["Operação"] + [
+    col for col in ordem_colunas if col in df_detalhado.columns
+]
 df_detalhado = df_detalhado[colunas_ordenadas]
 
-colunas_ordenadas_regional = (
-    ["Operação"]
-    + [col for col in ordem_colunas_regional if col in df_regional.columns]
-    + [
-        col
-        for col in df_regional.columns
-        if col not in ordem_colunas_regional + ["Operação"] + colunas_excluir
-    ]
-)
+colunas_ordenadas_regional = ["Operação"] + [
+    col for col in ordem_colunas_regional if col in df_regional.columns
+]
 df_regional = df_regional[colunas_ordenadas_regional]
 
 format_dict = {"Total": "{:,.0f}"}
