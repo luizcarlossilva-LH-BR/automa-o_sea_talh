@@ -210,19 +210,26 @@ def criar_tabela_detalhada_por_grupo(
             total_trip=("trip_number", "count")
         ).reset_index()
 
+        df_eta_agrupado["ETA Delay"] = df_eta_agrupado["eta_delay"]
+        df_eta_agrupado["ETA Trips"] = df_eta_agrupado["total_trip"]
+
         df_eta_agrupado["% ETA"] = (
             df_eta_agrupado["eta_delay"]
             / df_eta_agrupado["total_trip"].replace(0, pd.NA)
         ).mul(100).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_eta_agrupado[["operacao_origem", grupo_col, "% ETA"]],
+            df_eta_agrupado[["operacao_origem", grupo_col, "% ETA", "ETA Delay", "ETA Trips"]],
             on=["operacao_origem", grupo_col],
             how="left"
         )
         df_pivot["% ETA"] = df_pivot["% ETA"].fillna(0.0)
+        df_pivot["ETA Delay"] = df_pivot["ETA Delay"].fillna(0.0)
+        df_pivot["ETA Trips"] = df_pivot["ETA Trips"].fillna(0.0)
     else:
         df_pivot["% ETA"] = 0.0
+        df_pivot["ETA Delay"] = 0.0
+        df_pivot["ETA Trips"] = 0.0
     
     df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", grupo_col: grupo_label})
     colunas_pct = [f"% {s}" for s in colunas_status] + ["%Cancel Nok", "% CPT", "% ETA"]
@@ -300,6 +307,8 @@ ordem_colunas = [
     "fechada",
     "% fechada",
     "% ETA",
+    "ETA Trips",
+    "ETA Delay",
     "CPT Trips",
     "CPT Delay",
     "% CPT",
@@ -321,6 +330,8 @@ ordem_colunas_regional = [
     "fechada",
     "% fechada",
     "% ETA",
+    "ETA Trips",
+    "ETA Delay",
     "CPT Trips",
     "CPT Delay",
     "% CPT",
