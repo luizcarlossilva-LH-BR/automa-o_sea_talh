@@ -107,10 +107,38 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
     for status in colunas_status:
         df_pivot[f"% {status}"] = (df_pivot[status] / df_pivot["Total"] * 100).round(2)
 
-    if "aderencia_cancelamento" in df.columns and "contagem_cancelamentos" in df.columns:
+    def obter_coluna(df_base: pd.DataFrame, candidatos: list) -> str | None:
+        mapa = {col.strip().lower(): col for col in df_base.columns}
+        for candidato in candidatos:
+            if candidato in mapa:
+                return mapa[candidato]
+        return None
+
+    col_aderencia = obter_coluna(
+        df,
+        [
+            "aderencia_cancelamento",
+            "aderencia cancelamento",
+            "aderencia_cancelamento_ok",
+            "aderencia cancelamento ok"
+        ]
+    )
+    col_contagem = obter_coluna(
+        df,
+        [
+            "contagem_cancelamentos",
+            "contagem cancelamentos",
+            "contagem_cancelamento",
+            "contagem cancelamento",
+            "qtd_cancelamentos",
+            "quantidade_cancelamentos"
+        ]
+    )
+
+    if col_aderencia and col_contagem:
         df_cancelamento = df.groupby(["operacao_origem", "origin_station_code"]).agg(
-            soma_aderencia_cancelamento=("aderencia_cancelamento", "sum"),
-            contagem_cancelamentos=("contagem_cancelamentos", "sum")
+            soma_aderencia_cancelamento=(col_aderencia, "sum"),
+            contagem_cancelamentos=(col_contagem, "sum")
         ).reset_index()
 
         df_cancelamento["% Cancelamento OK"] = (
