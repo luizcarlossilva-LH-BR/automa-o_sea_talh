@@ -69,6 +69,50 @@ def calcular_media_operacao(df: pd.DataFrame, col_indicador: str, operacao: str)
     return df_op[col_indicador].mean()
 
 
+def calcular_aderencia_cancelamento(df: pd.DataFrame) -> pd.DataFrame:
+    """Calcula aderência de cancelamento por estação."""
+    if "aderencia_cancelamento" not in df.columns or "contagem_cancelamentos" not in df.columns:
+        return pd.DataFrame(columns=[
+            "origin_station_code",
+            "operacao_origem",
+            "contagem_cancelamentos",
+            "aderencia_cancelamento"
+        ])
+
+    df_agrupado = df.groupby(["origin_station_code", "operacao_origem"]).agg(
+        soma_aderencia_cancelamento=("aderencia_cancelamento", "sum"),
+        contagem_cancelamentos=("contagem_cancelamentos", "sum")
+    ).reset_index()
+
+    df_agrupado["aderencia_cancelamento"] = (
+        df_agrupado["soma_aderencia_cancelamento"]
+        / df_agrupado["contagem_cancelamentos"].replace(0, pd.NA)
+    ).fillna(0.0).round(2)
+
+    return df_agrupado
+
+
+def exibir_tabela_cancelamento(df: pd.DataFrame, operacao: str, container):
+    """Exibe tabela de aderência de cancelamento."""
+    df_filtrado = df[df["operacao_origem"] == operacao].copy()
+
+    if df_filtrado.empty:
+        container.info(f"Sem dados para {operacao}")
+        return
+
+    df_tabela = df_filtrado[["origin_station_code", "contagem_cancelamentos", "aderencia_cancelamento"]].copy()
+    df_tabela = df_tabela.sort_values("aderencia_cancelamento", ascending=True)
+    df_tabela.columns = ["Estação", "Cancelamentos", "Aderência Cancelamento"]
+    df_tabela = df_tabela.set_index("Estação")
+
+    container.dataframe(
+        df_tabela.style
+            .format({"Cancelamentos": "{:,.0f}", "Aderência Cancelamento": "{:.2f}%"})
+            .background_gradient(cmap='RdYlGn', axis=0, subset=["Aderência Cancelamento"]),
+        use_container_width=True
+    )
+
+
 # === CARREGAR DADOS ===
 
 df = preparar_dados(carregar_dados_sheets())
@@ -113,3 +157,21 @@ with col4:
     media_fmh_cpt = calcular_media_operacao(df_cpt, "%_cpt_on_time", "FMH")
     st.metric("FMH - Média CPT On Time", f"{media_fmh_cpt:.1f}%")
     exibir_tabela_aderencia(df_cpt, "FMH", "%_cpt_on_time", "% On Time", col4)
+
+# Cancelamento
+st.divider()
+st.subheader("Cancelamento")
+
+df_cancelamento = calcular_aderencia_cancelamento(df)
+
+col5, col6 = st.columns(2)
+
+with col5:
+    media_soc_cancelamento = calcular_media_operacao(df_cancelamento, "aderencia_cancelamento", "SOC")
+    st.metric("SOC - Aderência Cancelamento", f"{media_soc_cancelamento:.2f}%")
+    exibir_tabela_cancelamento(df_cancelamento, "SOC", col5)
+
+with col6:
+    media_fmh_cancelamento = calcular_media_operacao(df_cancelamento, "aderencia_cancelamento", "FMH")
+    st.metric("FMH - Aderência Cancelamento", f"{media_fmh_cancelamento:.2f}%")
+    exibir_tabela_cancelamento(df_cancelamento, "FMH", col6)
