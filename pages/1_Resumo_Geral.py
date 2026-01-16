@@ -10,6 +10,9 @@ from utils.data_loader import carregar_dados_sheets, preparar_dados
 
 st.set_page_config(layout="wide", page_title="Resumo Geral", page_icon="◼")
 
+# Atualiza automaticamente a cada 1 hora
+st.autorefresh(interval=60 * 60 * 1000, key="auto_refresh_resumo")
+
 # Estilo para testar atualização: sidebar laranja
 st.markdown(
     """
@@ -87,21 +90,29 @@ def exibir_tabela_resumo(df_pivot: pd.DataFrame, operacao: str, status_cols: lis
     )
 
 
-def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
-    """Cria tabela detalhada por estação."""
-    df_agrupado = df.groupby(["operacao_origem", "origin_station_code", "status_agrupado"]).agg(
+def criar_tabela_detalhada_por_grupo(
+    df: pd.DataFrame,
+    status_cols: list,
+    grupo_col: str,
+    grupo_label: str
+):
+    """Cria tabela detalhada por agrupamento."""
+    if grupo_col not in df.columns:
+        return pd.DataFrame(columns=["Operação", grupo_label]), []
+
+    df_agrupado = df.groupby(["operacao_origem", grupo_col, "status_agrupado"]).agg(
         trip_number=("trip_number", "count")
     ).reset_index()
     
     df_pivot = df_agrupado.pivot_table(
-        index=["operacao_origem", "origin_station_code"],
+        index=["operacao_origem", grupo_col],
         columns="status_agrupado",
         values="trip_number",
         aggfunc="sum",
         fill_value=0
     ).reset_index()
     
-    colunas_status = [col for col in df_pivot.columns if col not in ["operacao_origem", "origin_station_code"]]
+    colunas_status = [col for col in df_pivot.columns if col not in ["operacao_origem", grupo_col]]
     df_pivot["Total"] = df_pivot[colunas_status].sum(axis=1)
     
     for status in colunas_status:
@@ -140,7 +151,7 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
     )
 
     if col_aderencia and col_contagem:
-        df_cancelamento = df.groupby(["operacao_origem", "origin_station_code"]).agg(
+        df_cancelamento = df.groupby(["operacao_origem", grupo_col]).agg(
             soma_aderencia_cancelamento=(col_aderencia, "sum"),
             contagem_cancelamentos=(col_contagem, "sum")
         ).reset_index()
@@ -151,8 +162,8 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
         ).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_cancelamento[["operacao_origem", "origin_station_code", "%Cancel Nok"]],
-            on=["operacao_origem", "origin_station_code"],
+            df_cancelamento[["operacao_origem", grupo_col, "%Cancel Nok"]],
+            on=["operacao_origem", grupo_col],
             how="left"
         )
         df_pivot["%Cancel Nok"] = df_pivot["%Cancel Nok"].fillna(0.0)
@@ -161,7 +172,7 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
 
     if "eta_origin_realized" in df.columns and "status_cpt" in df.columns:
         df_cpt = df[df["eta_origin_realized"].notna()].copy()
-        df_cpt_agrupado = df_cpt.groupby(["operacao_origem", "origin_station_code"]).agg(
+        df_cpt_agrupado = df_cpt.groupby(["operacao_origem", grupo_col]).agg(
             cpt_delay=("status_cpt", lambda s: (s == "DELAY").sum()),
             total_trip=("trip_number", "count")
         ).reset_index()
@@ -172,8 +183,8 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
         ).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_cpt_agrupado[["operacao_origem", "origin_station_code", "% CPT"]],
-            on=["operacao_origem", "origin_station_code"],
+            df_cpt_agrupado[["operacao_origem", grupo_col, "% CPT"]],
+            on=["operacao_origem", grupo_col],
             how="left"
         )
         df_pivot["% CPT"] = df_pivot["% CPT"].fillna(0.0)
@@ -182,7 +193,7 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
 
     if "eta_origin_realized" in df.columns and "status_eta" in df.columns:
         df_eta = df[df["eta_origin_realized"].notna()].copy()
-        df_eta_agrupado = df_eta.groupby(["operacao_origem", "origin_station_code"]).agg(
+        df_eta_agrupado = df_eta.groupby(["operacao_origem", grupo_col]).agg(
             eta_delay=("status_eta", lambda s: (s == "DELAY").sum()),
             total_trip=("trip_number", "count")
         ).reset_index()
@@ -193,18 +204,23 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
         ).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_eta_agrupado[["operacao_origem", "origin_station_code", "% ETA"]],
-            on=["operacao_origem", "origin_station_code"],
+            df_eta_agrupado[["operacao_origem", grupo_col, "% ETA"]],
+            on=["operacao_origem", grupo_col],
             how="left"
         )
         df_pivot["% ETA"] = df_pivot["% ETA"].fillna(0.0)
     else:
         df_pivot["% ETA"] = 0.0
     
-    df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", "origin_station_code": "Estação"})
+    df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", grupo_col: grupo_label})
     colunas_pct = [f"% {s}" for s in colunas_status] + ["%Cancel Nok", "% CPT", "% ETA"]
     
-    return df_pivot.sort_values(["Operação", "Estação"]), colunas_pct
+    return df_pivot.sort_values(["Operação", grupo_label]), colunas_pct
+
+
+def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
+    """Cria tabela detalhada por estação."""
+    return criar_tabela_detalhada_por_grupo(df, status_cols, "origin_station_code", "Estação")
 
 
 # === CARREGAR DADOS ===
@@ -252,9 +268,31 @@ st.divider()
 st.subheader("Detalhamento por Estação")
 
 df_detalhado, colunas_pct = criar_tabela_detalhada(df_filtrado, status_cols)
+df_regional, colunas_pct_regional = criar_tabela_detalhada_por_grupo(
+    df_filtrado, status_cols, "regional", "Regional"
+)
 
 ordem_colunas = [
     "Estação",
+    "Total",
+    "Created",
+    "Assigning",
+    "Assigned",
+    "cancelado",
+    "% cancelado",
+    "%Cancel Nok",
+    "Arrived",
+    "Loading",
+    "Departed",
+    "Seal",
+    "fechada",
+    "% fechada",
+    "% ETA",
+    "% CPT",
+]
+
+ordem_colunas_regional = [
+    "Regional",
     "Total",
     "Created",
     "Assigning",
@@ -279,6 +317,13 @@ colunas_ordenadas = (
 )
 df_detalhado = df_detalhado[colunas_ordenadas]
 
+colunas_ordenadas_regional = (
+    ["Operação"]
+    + [col for col in ordem_colunas_regional if col in df_regional.columns]
+    + [col for col in df_regional.columns if col not in ordem_colunas_regional + ["Operação"]]
+)
+df_regional = df_regional[colunas_ordenadas_regional]
+
 format_dict = {"Total": "{:,.0f}"}
 for col in df_detalhado.columns:
     if col.startswith("%"):
@@ -287,6 +332,34 @@ for col in df_detalhado.columns:
         format_dict[col] = "{:,.0f}"
 
 colunas_pct_exibir = [col for col in df_detalhado.columns if col.startswith("%")]
+colunas_pct_exibir_regional = [col for col in df_regional.columns if col.startswith("%")]
+
+def exibir_detalhamento_por_regional(
+    df_tabela: pd.DataFrame,
+    operacao: str,
+    height_multiplier: float = 1.0
+):
+    if "Operação" not in df_tabela.columns or "Regional" not in df_tabela.columns:
+        st.info("Coluna 'regional' não encontrada nos dados.")
+        return
+
+    df_filtrado = df_tabela[df_tabela["Operação"] == operacao].drop(columns=["Operação"])
+
+    if df_filtrado.empty:
+        st.info(f"Sem dados para {operacao} por Regional")
+        return
+
+    altura_base = max(1, len(df_filtrado) + 1) * 35
+    altura = int(altura_base * height_multiplier)
+    st.subheader(f"Detalhamento por Regional - {operacao}")
+    st.dataframe(
+        df_filtrado.style
+            .format(format_dict)
+            .background_gradient(cmap="Reds", axis=0, subset=colunas_pct_exibir_regional),
+        use_container_width=True,
+        hide_index=True,
+        height=altura
+    )
 
 def exibir_detalhamento_por_operacao(
     df_tabela: pd.DataFrame,
@@ -306,5 +379,6 @@ def exibir_detalhamento_por_operacao(
         height=altura
     )
 
+exibir_detalhamento_por_regional(df_regional, "SOC", height_multiplier=1.15)
 exibir_detalhamento_por_operacao(df_detalhado, "SOC", height_multiplier=1.15)
 exibir_detalhamento_por_operacao(df_detalhado, "FMH")

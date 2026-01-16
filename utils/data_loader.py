@@ -11,7 +11,7 @@ SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1t1xG7KSqMEqn1sOw5ZYf6
 WORKSHEET_NAME = "db"
 
 
-@st.cache_data(ttl=300)  # Cache por 5 minutos
+@st.cache_data(ttl=3600)  # Cache por 1 hora
 def carregar_dados_sheets() -> pd.DataFrame:
     """
     Carrega dados do Google Sheets com cache.
