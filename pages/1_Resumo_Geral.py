@@ -94,6 +94,24 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
     
     for status in colunas_status:
         df_pivot[f"% {status}"] = (df_pivot[status] / df_pivot["Total"] * 100).round(2)
+
+    if "aderencia_cancelamento" in df.columns and "contagem_cancelamentos" in df.columns:
+        df_cancelamento = df.groupby(["operacao_origem", "origin_station_code"]).agg(
+            soma_aderencia_cancelamento=("aderencia_cancelamento", "sum"),
+            contagem_cancelamentos=("contagem_cancelamentos", "sum")
+        ).reset_index()
+
+        df_cancelamento["% Cancelamento OK"] = (
+            df_cancelamento["soma_aderencia_cancelamento"]
+            / df_cancelamento["contagem_cancelamentos"].replace(0, pd.NA)
+        ).fillna(0.0).round(2)
+
+        df_pivot = df_pivot.merge(
+            df_cancelamento[["operacao_origem", "origin_station_code", "% Cancelamento OK"]],
+            on=["operacao_origem", "origin_station_code"],
+            how="left"
+        )
+        df_pivot["% Cancelamento OK"] = df_pivot["% Cancelamento OK"].fillna(0.0)
     
     df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", "origin_station_code": "Estação"})
     colunas_pct = [f"% {s}" for s in colunas_status]
@@ -153,6 +171,7 @@ ordem_colunas = [
     "Assigning", "% Assigning",
     "Assigned", "% Assigned",
     "cancelado", "% cancelado",
+    "% Cancelamento OK",
     "no show", "% no show",
     "Arrived", "% Arrived",
     "Carrega", "% Carrega",
