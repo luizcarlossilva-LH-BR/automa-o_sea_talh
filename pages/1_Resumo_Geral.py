@@ -171,8 +171,8 @@ def criar_tabela_detalhada_por_grupo(
     else:
         df_pivot["%Cancel Nok"] = 0.0
 
-    if "eta_origin_realized" in df.columns and "status_cpt" in df.columns:
-        df_cpt = df[df["eta_origin_realized"].notna()].copy()
+    if "cpt_origin_realized" in df.columns and "status_cpt" in df.columns:
+        df_cpt = df[df["cpt_origin_realized"].notna()].copy()
         df_cpt_agrupado = df_cpt.groupby(["operacao_origem", grupo_col]).agg(
             cpt_delay=("status_cpt", lambda s: (s == "DELAY").sum()),
             total_trip=("trip_number", "count")
