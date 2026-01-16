@@ -406,6 +406,6 @@ def exibir_detalhamento_por_operacao(
         height=altura
     )
 
-exibir_detalhamento_por_regional(df_regional, "SOC", height_multiplier=1.15)
-exibir_detalhamento_por_operacao(df_detalhado, "SOC", height_multiplier=1.15)
+exibir_detalhamento_por_regional(df_regional, "SOC", height_multiplier=1)
+exibir_detalhamento_por_operacao(df_detalhado, "SOC", height_multiplier=1)
 exibir_detalhamento_por_operacao(df_detalhado, "FMH")
