@@ -172,7 +172,9 @@ def criar_tabela_detalhada_por_grupo(
         df_pivot["%Cancel Nok"] = 0.0
 
     if "cpt_origin_realized" in df.columns and "status_cpt" in df.columns:
-        df_cpt = df[df["cpt_origin_realized"].notna()].copy()
+        df_cpt = df[
+            df["cpt_origin_realized"].notna() & (df["cpt_origin_realized"] != "")
+        ].copy()
         df_cpt_agrupado = df_cpt.groupby(["operacao_origem", grupo_col]).agg(
             cpt_delay=("status_cpt", lambda s: (s == "DELAY").sum()),
             total_trip=("trip_number", "count")
@@ -200,7 +202,9 @@ def criar_tabela_detalhada_por_grupo(
         df_pivot["CPT Trips"] = 0.0
 
     if "eta_origin_realized" in df.columns and "status_eta" in df.columns:
-        df_eta = df[df["eta_origin_realized"].notna()].copy()
+        df_eta = df[
+            df["eta_origin_realized"].notna() & (df["eta_origin_realized"] != "")
+        ].copy()
         df_eta_agrupado = df_eta.groupby(["operacao_origem", grupo_col]).agg(
             eta_delay=("status_eta", lambda s: (s == "DELAY").sum()),
             total_trip=("trip_number", "count")
