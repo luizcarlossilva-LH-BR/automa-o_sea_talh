@@ -145,19 +145,19 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
             contagem_cancelamentos=(col_contagem, "sum")
         ).reset_index()
 
-        df_cancelamento["Cancel Nok"] = (
+        df_cancelamento["%Cancel Nok"] = (
             df_cancelamento["soma_aderencia_cancelamento"]
             / df_cancelamento["contagem_cancelamentos"].replace(0, pd.NA)
         ).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_cancelamento[["operacao_origem", "origin_station_code", "Cancel Nok"]],
+            df_cancelamento[["operacao_origem", "origin_station_code", "%Cancel Nok"]],
             on=["operacao_origem", "origin_station_code"],
             how="left"
         )
-        df_pivot["Cancel Nok"] = df_pivot["Cancel Nok"].fillna(0.0)
+        df_pivot["%Cancel Nok"] = df_pivot["%Cancel Nok"].fillna(0.0)
     else:
-        df_pivot["Cancel Nok"] = 0.0
+        df_pivot["%Cancel Nok"] = 0.0
 
     if "eta_origin_realized" in df.columns and "status_cpt" in df.columns:
         df_cpt = df[df["eta_origin_realized"].notna()].copy()
@@ -202,7 +202,7 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
         df_pivot["% ETA"] = 0.0
     
     df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", "origin_station_code": "Estação"})
-    colunas_pct = [f"% {s}" for s in colunas_status] + ["Cancel Nok", "% CPT", "% ETA"]
+    colunas_pct = [f"% {s}" for s in colunas_status] + ["%Cancel Nok", "% CPT", "% ETA"]
     
     return df_pivot.sort_values(["Operação", "Estação"]), colunas_pct
 
@@ -255,21 +255,21 @@ df_detalhado, colunas_pct = criar_tabela_detalhada(df_filtrado, status_cols)
 
 ordem_colunas = [
     "Estação",
-    "Created", "% Created",
-    "Assigning", "% Assigning",
-    "Assigned", "% Assigned",
-    "cancelado", "% cancelado",
-    "Cancel Nok",
-    "% CPT",
-    "% ETA",
-    "no show", "% no show",
-    "Arrived", "% Arrived",
-    "Carrega", "% Carrega",
-    "Loading", "% Loading",
-    "Departed", "% Departed",
-    "Viagem", "% Viagem",
-    "Descarga", "% Descarga",
     "Total",
+    "Created",
+    "Assigning",
+    "Assigned",
+    "cancelado",
+    "% cancelado",
+    "%Cancel Nok",
+    "Arrived",
+    "Loading",
+    "Departed",
+    "Seal",
+    "fechada",
+    "% fechada",
+    "% ETA",
+    "% CPT",
 ]
 
 colunas_ordenadas = (
@@ -286,6 +286,8 @@ for col in df_detalhado.columns:
     elif col not in ["Operação", "Estação", "Total"]:
         format_dict[col] = "{:,.0f}"
 
+colunas_pct_exibir = [col for col in df_detalhado.columns if col.startswith("%")]
+
 def exibir_detalhamento_por_operacao(
     df_tabela: pd.DataFrame,
     operacao: str,
@@ -298,7 +300,7 @@ def exibir_detalhamento_por_operacao(
     st.dataframe(
         df_filtrado.style
             .format(format_dict)
-            .background_gradient(cmap='OrRd', axis=0, subset=colunas_pct),
+            .background_gradient(cmap="Reds", axis=0, subset=colunas_pct_exibir),
         use_container_width=True,
         hide_index=True,
         height=altura
