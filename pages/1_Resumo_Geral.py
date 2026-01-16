@@ -351,14 +351,30 @@ ordem_colunas_regional = [
     "% CPT",
 ]
 
-colunas_ordenadas = ["Operação"] + [
-    col for col in ordem_colunas if col in df_detalhado.columns
-]
+def normalizar_coluna_exibicao(nome: str) -> str:
+    return (
+        nome.strip()
+        .lower()
+        .replace(" ", "")
+        .replace("_", "")
+        .replace("%", "pct")
+    )
+
+def ordenar_colunas(df_base: pd.DataFrame, ordem: list) -> list:
+    mapa = {normalizar_coluna_exibicao(col): col for col in df_base.columns}
+    colunas = []
+    for col in ordem:
+        chave = normalizar_coluna_exibicao(col)
+        if chave in mapa:
+            colunas.append(mapa[chave])
+    return colunas
+
+colunas_ordenadas = ["Operação"] + ordenar_colunas(df_detalhado, ordem_colunas)
 df_detalhado = df_detalhado[colunas_ordenadas]
 
-colunas_ordenadas_regional = ["Operação"] + [
-    col for col in ordem_colunas_regional if col in df_regional.columns
-]
+colunas_ordenadas_regional = ["Operação"] + ordenar_colunas(
+    df_regional, ordem_colunas_regional
+)
 df_regional = df_regional[colunas_ordenadas_regional]
 
 format_dict = {"Total": "{:,.0f}"}
