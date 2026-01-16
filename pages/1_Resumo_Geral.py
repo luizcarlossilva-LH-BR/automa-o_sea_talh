@@ -107,8 +107,16 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
     for status in colunas_status:
         df_pivot[f"% {status}"] = (df_pivot[status] / df_pivot["Total"] * 100).round(2)
 
+    def normalizar_nome_coluna(nome: str) -> str:
+        return (
+            nome.strip()
+            .lower()
+            .replace("_", "")
+            .replace(" ", "")
+        )
+
     def obter_coluna(df_base: pd.DataFrame, candidatos: list) -> str | None:
-        mapa = {col.strip().lower(): col for col in df_base.columns}
+        mapa = {normalizar_nome_coluna(col): col for col in df_base.columns}
         for candidato in candidatos:
             if candidato in mapa:
                 return mapa[candidato]
@@ -117,21 +125,17 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
     col_aderencia = obter_coluna(
         df,
         [
-            "aderencia_cancelamento",
-            "aderencia cancelamento",
-            "aderencia_cancelamento_ok",
-            "aderencia cancelamento ok"
+            "aderenciacancelamento",
+            "aderenciacancelamentook"
         ]
     )
     col_contagem = obter_coluna(
         df,
         [
-            "contagem_cancelamentos",
-            "contagem cancelamentos",
-            "contagem_cancelamento",
-            "contagem cancelamento",
-            "qtd_cancelamentos",
-            "quantidade_cancelamentos"
+            "contagemcancelamentos",
+            "contagemcancelamento",
+            "qtdcancelamentos",
+            "quantidadecancelamentos"
         ]
     )
 
@@ -152,9 +156,11 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
             how="left"
         )
         df_pivot["% Cancelamento OK"] = df_pivot["% Cancelamento OK"].fillna(0.0)
+    else:
+        df_pivot["% Cancelamento OK"] = 0.0
     
     df_pivot = df_pivot.rename(columns={"operacao_origem": "Operação", "origin_station_code": "Estação"})
-    colunas_pct = [f"% {s}" for s in colunas_status]
+    colunas_pct = [f"% {s}" for s in colunas_status] + ["% Cancelamento OK"]
     
     return df_pivot.sort_values(["Operação", "Estação"]), colunas_pct
 
