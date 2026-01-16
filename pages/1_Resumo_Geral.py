@@ -181,7 +181,7 @@ def criar_tabela_detalhada_por_grupo(
         df_cpt_agrupado["% CPT"] = (
             df_cpt_agrupado["cpt_delay"]
             / df_cpt_agrupado["total_trip"].replace(0, pd.NA)
-        ).fillna(0.0).round(2)
+        ).mul(100).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
             df_cpt_agrupado[["operacao_origem", grupo_col, "% CPT"]],
@@ -202,7 +202,7 @@ def criar_tabela_detalhada_por_grupo(
         df_eta_agrupado["% ETA"] = (
             df_eta_agrupado["eta_delay"]
             / df_eta_agrupado["total_trip"].replace(0, pd.NA)
-        ).fillna(0.0).round(2)
+        ).mul(100).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
             df_eta_agrupado[["operacao_origem", grupo_col, "% ETA"]],
