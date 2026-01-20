@@ -14,13 +14,12 @@ st.set_page_config(layout="wide", page_title="Resumo Geral", page_icon="◼")
 # Atualiza automaticamente a cada 1 hora
 st_autorefresh(interval=60 * 60 * 1000, key="auto_refresh_resumo")
 
-# Estilo para testar atualização: sidebar laranja
+# Remove sidebar para maximizar area util
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] {
-        background-color: #f28c28;
-    }
+    [data-testid="stSidebar"] {display: none;}
+    [data-testid="stSidebarNav"] {display: none;}
     </style>
     """,
     unsafe_allow_html=True
@@ -247,12 +246,13 @@ def criar_tabela_detalhada(df: pd.DataFrame, status_cols: list):
 df = preparar_dados(carregar_dados_sheets())
 
 # === FILTROS ===
-st.sidebar.header("Filtros")
 operacoes_disponiveis = sorted(df["operacao_origem"].dropna().unique())
 estacoes_disponiveis = sorted(df["origin_station_code"].dropna().unique())
 
-operacao_selecionada = st.sidebar.selectbox("Operação", ["Todas"] + operacoes_disponiveis)
-estacao_selecionada = st.sidebar.selectbox("Estação", ["Todas"] + estacoes_disponiveis)
+with st.expander("Filtros", expanded=False):
+    f1, f2 = st.columns(2)
+    operacao_selecionada = f1.selectbox("Operação", ["Todas"] + operacoes_disponiveis)
+    estacao_selecionada = f2.selectbox("Estação", ["Todas"] + estacoes_disponiveis)
 
 df_filtrado = df.copy()
 if operacao_selecionada != "Todas":
@@ -421,6 +421,6 @@ def exibir_detalhamento_por_operacao(
         height=altura
     )
 
-exibir_detalhamento_por_regional(df_regional, "SOC", height_multiplier=1)
+exibir_detalhamento_por_regional(df_regional, "", height_multiplier=1)
 exibir_detalhamento_por_operacao(df_detalhado, "SOC", height_multiplier=1)
 exibir_detalhamento_por_operacao(df_detalhado, "FMH", ordenar_total_desc=True)
