@@ -255,17 +255,28 @@ df = preparar_dados(carregar_dados_sheets())
 # === FILTROS ===
 operacoes_disponiveis = sorted(df["operacao_origem"].dropna().unique())
 estacoes_disponiveis = sorted(df["origin_station_code"].dropna().unique())
+regionais_disponiveis = (
+    sorted(df["regional"].dropna().unique())
+    if "regional" in df.columns
+    else []
+)
 
 with st.expander("Filtros", expanded=False):
-    f1, f2 = st.columns(2)
+    f1, f2, f3 = st.columns(3)
     operacao_selecionada = f1.selectbox("Operação", ["Todas"] + operacoes_disponiveis)
     estacao_selecionada = f2.selectbox("Estação", ["Todas"] + estacoes_disponiveis)
+    if regionais_disponiveis:
+        regional_selecionada = f3.selectbox("Regional", ["Todas"] + regionais_disponiveis)
+    else:
+        regional_selecionada = "Todas"
 
 df_filtrado = df.copy()
 if operacao_selecionada != "Todas":
     df_filtrado = df_filtrado[df_filtrado["operacao_origem"] == operacao_selecionada]
 if estacao_selecionada != "Todas":
     df_filtrado = df_filtrado[df_filtrado["origin_station_code"] == estacao_selecionada]
+if regional_selecionada != "Todas" and "regional" in df_filtrado.columns:
+    df_filtrado = df_filtrado[df_filtrado["regional"] == regional_selecionada]
 
 df_pivot, status_cols = criar_pivot_por_operacao(df_filtrado)
 
