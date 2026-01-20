@@ -11,8 +11,25 @@ from utils.data_loader import carregar_dados_sheets, preparar_dados
 
 st.set_page_config(layout="wide", page_title="Resumo Geral", page_icon="◼")
 
-# Atualiza automaticamente a cada 1 hora
-st_autorefresh(interval=60 * 60 * 1000, key="auto_refresh_resumo")
+# Atualiza automaticamente a cada 30 minutos
+st_autorefresh(interval=30 * 60 * 1000, key="auto_refresh_resumo")
+
+# Ajusta fonte das tabelas para melhorar legibilidade no print
+st.markdown(
+    """
+    <style>
+    [data-testid="stDataFrame"] {
+        font-size: 14px;
+    }
+    [data-testid="stDataFrame"] thead tr th,
+    [data-testid="stDataFrame"] tbody tr td {
+        font-size: 14px !important;
+        line-height: 1.2;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Remove sidebar para maximizar area util
 st.markdown(
