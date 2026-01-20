@@ -267,21 +267,6 @@ df_pivot, status_cols = criar_pivot_por_operacao(df_filtrado)
 st.title("Resumo Geral")
 st.caption("Visão consolidada das operações SOC e FMH")
 
-st.divider()
-
-# Métricas principais
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("SOC")
-    exibir_metricas(df_pivot, "SOC", col1)
-    exibir_tabela_resumo(df_pivot, "SOC", status_cols, col1)
-
-with col2:
-    st.subheader("FMH")
-    exibir_metricas(df_pivot, "FMH", col2)
-    exibir_tabela_resumo(df_pivot, "FMH", status_cols, col2)
-
 # Tabela detalhada
 st.divider()
 st.subheader("Detalhamento por Estação")
