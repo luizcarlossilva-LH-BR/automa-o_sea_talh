@@ -1,0 +1,54 @@
+name: Dashboard Performance → SeaTalk
+
+on:
+  # Executa manualmente
+  workflow_dispatch:
+
+  # Executa em horarios programados (ajuste conforme necessario)
+  schedule:
+    # Exemplo: Segunda a Sexta as 8h (horario UTC, ajuste para seu fuso)
+    # UTC 11:00 = Brasilia 8:00
+    - cron: '0 11 * * 1-5'
+
+jobs:
+  send-dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+
+      - name: Capture and send dashboard to SeaTalk
+        env:
+          STREAMLIT_URL: "https://automa-oseatalh-cmvruckvldublahzfafxzz.streamlit.app/Resumo_Geral"
+          WEBHOOK_URL: ${{ secrets.SEATALK_WEBHOOK_URL }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SHEET_NAME_SOC: ${{ vars.SHEET_NAME_SOC || 'SOC' }}
+          SHEET_NAME_HUB: ${{ vars.SHEET_NAME_HUB || 'HUB' }}
+          WAIT_TIME: "8"
+          HEADLESS: "true"
+        run: |
+          python enviar_dashboard_seatalk.py
+
+      - name: Upload screenshots as artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dashboard-screenshots
+          path: |
+            dashboard_resumo_geral.png
+          retention-days: 7
