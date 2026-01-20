@@ -26,10 +26,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install playwright
-          playwright install chromium
-          playwright install-deps
+          pip install playwright requests
+          playwright install --with-deps chromium
 
       - name: Capture and send dashboard to SeaTalk
         env:
