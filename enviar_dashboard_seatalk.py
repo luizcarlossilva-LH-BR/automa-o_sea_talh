@@ -36,9 +36,9 @@ RUN_ONCE = os.getenv("RUN_ONCE", "false").lower() == "true"
 # Modo headless (True = nao mostra navegador)
 HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
 
-# Viewport para capturar tela inteira (1920x1080 = Full HD)
+# Viewport para capturar tela inteira (1920x2000)
 VIEWPORT_WIDTH = 1920
-VIEWPORT_HEIGHT = 1080
+VIEWPORT_HEIGHT = 2000
 
 
 # ============================================
