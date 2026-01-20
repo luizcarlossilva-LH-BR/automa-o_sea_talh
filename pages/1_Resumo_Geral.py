@@ -58,7 +58,14 @@ def exibir_metricas(df_pivot: pd.DataFrame, operacao: str, container):
         return
     
     total = int(df_pivot.loc[operacao, "Total"])
+    fechada = df_pivot.loc[operacao, "% FECHADA"] if "% FECHADA" in df_pivot.columns else 0
+    cancelado = df_pivot.loc[operacao, "% CANCELADO"] if "% CANCELADO" in df_pivot.columns else 0
+    
     container.metric("Total de Viagens", f"{total:,}".replace(",", "."))
+    
+    c1, c2 = container.columns(2)
+    c1.metric("Fechadas", f"{fechada:.1f}%")
+    c2.metric("Canceladas", f"{cancelado:.1f}%", delta=None)
 
 
 def exibir_tabela_resumo(df_pivot: pd.DataFrame, operacao: str, status_cols: list, container):
@@ -333,6 +340,7 @@ ordem_colunas_regional = [
     "Seal",
     "fechada",
     "Cancelled",
+    "No show",
     "%cancelado",
     "%Cancel Nok",
     "% fechada",
