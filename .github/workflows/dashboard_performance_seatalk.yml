@@ -35,14 +35,16 @@ jobs:
         env:
           STREAMLIT_URL: "https://automa-oseatalh-cmvruckvldublahzfafxzz.streamlit.app/Resumo_Geral"
           WEBHOOK_URL: ${{ secrets.SEATALK_WEBHOOK_URL }}
-          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          SHEET_NAME_SOC: ${{ vars.SHEET_NAME_SOC || 'SOC' }}
-          SHEET_NAME_HUB: ${{ vars.SHEET_NAME_HUB || 'HUB' }}
           WAIT_TIME: "8"
           HEADLESS: "true"
         run: |
           python enviar_dashboard_seatalk.py
+
+      - name: List generated files
+        if: always()
+        run: |
+          ls -la
+          find . -name "dashboard_resumo_geral.png" -print
 
       - name: Upload screenshots as artifacts
         uses: actions/upload-artifact@v4
@@ -50,5 +52,6 @@ jobs:
         with:
           name: dashboard-screenshots
           path: |
-            dashboard_resumo_geral.png
+            **/dashboard_resumo_geral.png
           retention-days: 7
+          if-no-files-found: warn
