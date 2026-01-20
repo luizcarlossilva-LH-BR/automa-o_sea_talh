@@ -100,7 +100,14 @@ def criar_tabela_detalhada_por_grupo(
     if grupo_col not in df.columns:
         return pd.DataFrame(columns=["Operação", grupo_label]), []
 
-    df_agrupado = df.groupby(["operacao_origem", grupo_col, "status_agrupado"]).agg(
+    df_base = df.copy()
+    df_base[grupo_col] = (
+        df_base[grupo_col]
+        .fillna("Sem Regional")
+        .replace("", "Sem Regional")
+    )
+
+    df_agrupado = df_base.groupby(["operacao_origem", grupo_col, "status_agrupado"]).agg(
         trip_number=("trip_number", "count")
     ).reset_index()
     
@@ -134,14 +141,14 @@ def criar_tabela_detalhada_por_grupo(
         return None
 
     col_aderencia = obter_coluna(
-        df,
+        df_base,
         [
             "aderenciacancelamento",
             "aderenciacancelamentook"
         ]
     )
     col_contagem = obter_coluna(
-        df,
+        df_base,
         [
             "contagemcancelamentos",
             "contagemcancelamento",
@@ -151,7 +158,7 @@ def criar_tabela_detalhada_por_grupo(
     )
 
     if col_aderencia and col_contagem:
-        df_cancelamento = df.groupby(["operacao_origem", grupo_col]).agg(
+        df_cancelamento = df_base.groupby(["operacao_origem", grupo_col]).agg(
             soma_aderencia_cancelamento=(col_aderencia, "sum"),
             contagem_cancelamentos=(col_contagem, "sum")
         ).reset_index()
@@ -170,9 +177,9 @@ def criar_tabela_detalhada_por_grupo(
     else:
         df_pivot["%Cancel Nok"] = 0.0
 
-    if "cpt_origin_realized" in df.columns and "status_cpt" in df.columns:
-        df_cpt = df[
-            df["cpt_origin_realized"].notna() & (df["cpt_origin_realized"] != "")
+    if "cpt_origin_realized" in df_base.columns and "status_cpt" in df_base.columns:
+        df_cpt = df_base[
+            df_base["cpt_origin_realized"].notna() & (df_base["cpt_origin_realized"] != "")
         ].copy()
         df_cpt_agrupado = df_cpt.groupby(["operacao_origem", grupo_col]).agg(
             cpt_delay=("status_cpt", lambda s: (s == "DELAY").sum()),
@@ -200,9 +207,9 @@ def criar_tabela_detalhada_por_grupo(
         df_pivot["CPT Delay"] = 0.0
         df_pivot["CPT Trips"] = 0.0
 
-    if "eta_origin_realized" in df.columns and "status_eta" in df.columns:
-        df_eta = df[
-            df["eta_origin_realized"].notna() & (df["eta_origin_realized"] != "")
+    if "eta_origin_realized" in df_base.columns and "status_eta" in df_base.columns:
+        df_eta = df_base[
+            df_base["eta_origin_realized"].notna() & (df_base["eta_origin_realized"] != "")
         ].copy()
         df_eta_agrupado = df_eta.groupby(["operacao_origem", grupo_col]).agg(
             eta_delay=("status_eta", lambda s: (s == "DELAY").sum()),
@@ -382,7 +389,12 @@ def exibir_detalhamento_por_regional(
         st.info("Coluna 'regional' não encontrada nos dados.")
         return
 
-    df_filtrado = df_tabela[df_tabela["Operação"] == operacao].drop(columns=["Operação"])
+    if operacao:
+        df_filtrado = df_tabela[df_tabela["Operação"] == operacao].drop(columns=["Operação"])
+        titulo_operacao = operacao
+    else:
+        df_filtrado = df_tabela.drop(columns=["Operação"])
+        titulo_operacao = "Todas"
 
     if df_filtrado.empty:
         st.info(f"Sem dados para {operacao} por Regional")
@@ -390,7 +402,7 @@ def exibir_detalhamento_por_regional(
 
     altura_base = max(1, len(df_filtrado) + 1) * 35
     altura = int(altura_base * height_multiplier)
-    st.subheader(f"Detalhamento por Regional - {operacao}")
+    st.subheader(f"Detalhamento por Regional - {titulo_operacao}")
     st.dataframe(
         df_filtrado.style
             .format(format_dict)
