@@ -393,7 +393,12 @@ def exibir_detalhamento_por_regional(
         df_filtrado = df_tabela[df_tabela["Operação"] == operacao].drop(columns=["Operação"])
         titulo_operacao = operacao
     else:
-        df_filtrado = df_tabela.drop(columns=["Operação"])
+        # Agrupa por Regional somando todas as operações
+        colunas_num = df_tabela.select_dtypes(include="number").columns
+        df_filtrado = (
+            df_tabela.groupby("Regional", as_index=False)[colunas_num]
+            .sum()
+        )
         titulo_operacao = "Todas"
 
     if df_filtrado.empty:
