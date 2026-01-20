@@ -4,11 +4,10 @@ on:
   # Executa manualmente
   workflow_dispatch:
 
-  # Executa em horarios programados (ajuste conforme necessario)
+  # Executa em horarios programados (UTC)
   schedule:
-    # Exemplo: Segunda a Sexta as 8h (horario UTC, ajuste para seu fuso)
-    # UTC 11:00 = Brasilia 8:00
-    - cron: '0 11 * * 1-5'
+    # A cada hora (UTC)
+    - cron: '0 * * * *'
 
 jobs:
   send-dashboard:
@@ -38,6 +37,7 @@ jobs:
           WEBHOOK_URL: ${{ secrets.SEATALK_WEBHOOK_URL }}
           WAIT_TIME: "8"
           HEADLESS: "true"
+          RUN_ONCE: "true"
         run: |
           python enviar_dashboard_seatalk.py
 
