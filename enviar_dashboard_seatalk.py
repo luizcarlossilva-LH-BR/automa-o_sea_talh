@@ -69,7 +69,7 @@ async def capture_single_page(
         # Viewport grande para capturar dashboard completo em uma tela
         context = await browser.new_context(
             viewport={'width': VIEWPORT_WIDTH, 'height': VIEWPORT_HEIGHT},
-            device_scale_factor=1
+            device_scale_factor=2
         )
         page = await context.new_page()
 
