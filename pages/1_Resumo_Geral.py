@@ -122,7 +122,18 @@ def criar_tabela_detalhada_por_grupo(
         df_base[grupo_col]
         .fillna("Sem Regional")
         .replace("", "Sem Regional")
+        .replace("#N/A", "Sem Regional") # Consolidando erros comuns
     )
+    # Se o usuário quer Ocultar visualmente a linha especifica #N/A, talvez seja melhor garantir que ela não exista.
+    # Mas se #N/A é lixo, melhor filtrar.
+    # Vou filtrar explicitamente linhas que ficaram como #N/A se a substituição acima não pegou, ou melhor:
+    # O user pediu para ocultar a linha "#N/A". Se ela está aparecendo, é porque é uma string "#N/A".
+    # Se eu substituir por "Sem Regional", ela soma no "Sem Regional".
+    # Se eu substituir por None e dar dropna, ela some.
+    # Assumindo que o usuário não quer ver essa sujeira.
+    
+    # OPÇÃO MELHOR: Filtrar antes.
+    df_base = df_base[df_base[grupo_col] != "#N/A"]
 
     df_agrupado = df_base.groupby(["operacao_origem", grupo_col, "status_agrupado"]).agg(
         trip_number=("trip_number", "count")
