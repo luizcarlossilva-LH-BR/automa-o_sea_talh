@@ -19,11 +19,11 @@ st.markdown(
     """
     <style>
     [data-testid="stDataFrame"] {
-        font-size: 14px;
+        font-size: 18px;
     }
     [data-testid="stDataFrame"] thead tr th,
     [data-testid="stDataFrame"] tbody tr td {
-        font-size: 14px !important;
+        font-size: 18px !important;
         line-height: 1.2;
     }
     </style>
