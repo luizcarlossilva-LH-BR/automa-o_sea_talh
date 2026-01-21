@@ -186,13 +186,17 @@ def criar_tabela_detalhada_por_grupo(
         ).fillna(0.0).round(2)
 
         df_pivot = df_pivot.merge(
-            df_cancelamento[["operacao_origem", grupo_col, "%Cancel Nok"]],
+            df_cancelamento[["operacao_origem", grupo_col, "%Cancel Nok", "soma_aderencia_cancelamento", "contagem_cancelamentos"]],
             on=["operacao_origem", grupo_col],
             how="left"
         )
         df_pivot["%Cancel Nok"] = df_pivot["%Cancel Nok"].fillna(0.0)
+        df_pivot["soma_aderencia_cancelamento"] = df_pivot["soma_aderencia_cancelamento"].fillna(0)
+        df_pivot["contagem_cancelamentos"] = df_pivot["contagem_cancelamentos"].fillna(0)
     else:
         df_pivot["%Cancel Nok"] = 0.0
+        df_pivot["soma_aderencia_cancelamento"] = 0
+        df_pivot["contagem_cancelamentos"] = 0
 
     if "cpt_origin_realized" in df_base.columns and "status_cpt" in df_base.columns:
         df_cpt = df_base[
@@ -337,6 +341,8 @@ ordem_colunas = [
     "Seal",
     "fechada",
     "Cancelled",
+    "No show",
+    "% No show",
     "%cancelado",
     "%Cancel Nok",
     "% fechada",
@@ -359,8 +365,9 @@ ordem_colunas_regional = [
     "Departed",
     "Seal",
     "fechada",
-    "Cancelled",
     "No show",
+    "% No show",
+    "Cancelled",
     "%cancelado",
     "%Cancel Nok",
     "% fechada",
@@ -370,6 +377,8 @@ ordem_colunas_regional = [
     "CPT Trips",
     "CPT Delay",
     "% CPT",
+    "soma_aderencia_cancelamento",
+    "contagem_cancelamentos",
 ]
 
 def normalizar_coluna_exibicao(nome: str) -> str:
@@ -423,10 +432,39 @@ def exibir_detalhamento_por_regional(
     else:
         # Agrupa por Regional somando todas as operações
         colunas_num = df_tabela.select_dtypes(include="number").columns
+        
+        # Garante que as colunas brutas de cancelamento estejam presentes para soma
+        cols_extras = ["soma_aderencia_cancelamento", "contagem_cancelamentos"]
+        for col in cols_extras:
+            if col not in colunas_num and col in df_tabela.columns:
+                 colunas_num = colunas_num.append(pd.Index([col]))
+
         df_filtrado = (
             df_tabela.groupby("Regional", as_index=False)[colunas_num]
             .sum()
         )
+        
+        # Recalcula as porcentagens baseadas nos totais somados
+        # 1. Porcentagens de status (Created, Assigned, etc.)
+        for col_pct in colunas_pct_exibir_regional:
+             col_status = col_pct.replace("% ", "")
+             if col_status in df_filtrado.columns and "Total" in df_filtrado.columns:
+                 df_filtrado[col_pct] = (df_filtrado[col_status] / df_filtrado["Total"] * 100).fillna(0).round(2)
+        
+        # 2. Porcentagens específicas (CPT, ETA, Cancel)
+        if "CPT Delay" in df_filtrado.columns and "CPT Trips" in df_filtrado.columns:
+             df_filtrado["% CPT"] = (df_filtrado["CPT Delay"] / df_filtrado["CPT Trips"].replace(0, pd.NA)).mul(100).fillna(0.0).round(2)
+             
+        if "ETA Delay" in df_filtrado.columns and "ETA Trips" in df_filtrado.columns:
+             df_filtrado["% ETA"] = (df_filtrado["ETA Delay"] / df_filtrado["ETA Trips"].replace(0, pd.NA)).mul(100).fillna(0.0).round(2)
+
+        if "soma_aderencia_cancelamento" in df_filtrado.columns and "contagem_cancelamentos" in df_filtrado.columns:
+             df_filtrado["%Cancel Nok"] = (df_filtrado["soma_aderencia_cancelamento"] / df_filtrado["contagem_cancelamentos"].replace(0, pd.NA)).mul(100).fillna(0.0).round(2)
+        
+        # Remove colunas auxiliares se desejar limpar a visualização
+        cols_drop = ["soma_aderencia_cancelamento", "contagem_cancelamentos"]
+        df_filtrado = df_filtrado.drop(columns=[c for c in cols_drop if c in df_filtrado.columns])
+
         titulo_operacao = "Todas"
 
     if df_filtrado.empty:
