@@ -37,7 +37,7 @@ RUN_ONCE = os.getenv("RUN_ONCE", "false").lower() == "true"
 HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
 
 # Viewport para capturar tela inteira (1920x2000)
-VIEWPORT_WIDTH = 1920
+VIEWPORT_WIDTH = 2500
 VIEWPORT_HEIGHT = 2000
 
 
