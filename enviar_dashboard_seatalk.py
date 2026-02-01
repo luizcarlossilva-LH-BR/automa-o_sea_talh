@@ -37,7 +37,7 @@ RUN_ONCE = os.getenv("RUN_ONCE", "false").lower() == "true"
 HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
 
 # Viewport para capturar tela inteira (1920x2000)
-VIEWPORT_WIDTH = 3500
+VIEWPORT_WIDTH = 2500
 VIEWPORT_HEIGHT = 2000
 
 
@@ -69,7 +69,7 @@ async def capture_single_page(
         # Viewport grande para capturar dashboard completo em uma tela
         context = await browser.new_context(
             viewport={'width': VIEWPORT_WIDTH, 'height': VIEWPORT_HEIGHT},
-            device_scale_factor=2
+            device_scale_factor=3
         )
         page = await context.new_page()
 
